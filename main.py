@@ -7,12 +7,38 @@ import math
 from scipy.stats import norm
 import seaborn as sns
 
+def get_len(img):
+    cropped_image = img[965:980, 0:1280]
+    height, width, channels = cropped_image.shape
+    y = height//2
+    x = 0
+    counting = False
+    black = []
+    while x < width:
+        r,g,b = cropped_image[y, x]
+        x+=1
+        if r != 0 and g != 0 and b !=0:
+            if counting:
+                pixels+=1
+            else:
+                counting=True
+                pixels = 1
+        else:
+            if counting:
+                counting = False
+                black.append(pixels)
+    return max(black)
+
+
 ## Поиск волокн
 img = cv2.imread('im2.bmp')
+pix_um = 100 / get_len(img)
 
 img_grey = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 thresh = 140
+
 ret,thresh_img = cv2.threshold(img_grey, thresh, 250, cv2.THRESH_BINARY)
+
 contours, hierarchy = cv2.findContours(thresh_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
 contours = [cnt for cnt in contours if cv2.contourArea(cnt) > 9000]
 img_contours = np.zeros(img.shape)
@@ -94,7 +120,8 @@ def count_dist(img):
             else:
                 if counting:
                     counting = False
-                    dists.append(pixels)
+                    result = pixels * pix_um ## перевод в нанометры
+                    dists.append(result)
             start+=1
         all.append(dists)
         middle+=1
@@ -120,14 +147,9 @@ img1 = cv2.imread('black.png')
 x = count_dist(img1)
 
 x = remove_arrs(x)
-# x = get_contours(img1)
-# x = np.linspace(1,50,200)
-
-def normal_dist(x , mean , sd):
-    prob_density = (np.pi*sd) * np.exp(-0.5*((x-mean)/sd)**2)
-    return prob_density
 
 mean = np.mean(x)
+
 sd = np.std(x)
 distr = norm(mean, sd)
 sns.distplot(distr.rvs(1000))
