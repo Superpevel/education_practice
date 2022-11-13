@@ -79,26 +79,47 @@ def count_dist(img):
     middle = width//2
     start = 0
     dists =[]
+    all = []
     counting = True
     pixels = 0
-    while start != height:
-        r,g,b = img[start, middle]
-        if r != 0 and g != 0 and b !=0:
-            if counting:
-                pixels+=1
+    while middle != width:
+        while start != height:
+            r,g,b = img[start, middle]
+            if r != 0 and g != 0 and b !=0:
+                if counting:
+                    pixels+=1
+                else:
+                    counting=True
+                    pixels = 1
             else:
-                counting=True
-                pixels = 1
+                if counting:
+                    counting = False
+                    dists.append(pixels)
+            start+=1
+        all.append(dists)
+        middle+=1
+    return all
+
+def remove_arrs(dists):
+    dct = {}
+    for dist in dists:
+        if dct.get(len(dist)):
+            dct[len(dist)] = dct[len(dist)] + 1
         else:
-            if counting:
-                counting = False
-                dists.append(pixels)
-        start+=1
-    return dists
+           dct[len(dist)] = 1
+    dsts = []
+    inverse = [(value, key) for key, value in dct.items()]
+    key = max(inverse)[1]
+    for dist in dists:
+        if len(dist) == key:
+            dsts.append(dist)
+
+    return dsts
 
 img1 = cv2.imread('black.png')
 x = count_dist(img1)
 
+x = remove_arrs(x)
 # x = get_contours(img1)
 # x = np.linspace(1,50,200)
 
@@ -108,7 +129,7 @@ def normal_dist(x , mean , sd):
 
 mean = np.mean(x)
 sd = np.std(x)
-distr = norm(mean, sd) ## нормальное распределение
+distr = norm(mean, sd)
 sns.distplot(distr.rvs(1000))
 
 plt.show() 
